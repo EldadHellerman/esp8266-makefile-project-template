@@ -26,7 +26,7 @@ BUILD_DIR = build
 # LINKER_SCRIPT = $(LD_SCRIPTS_DIR)/app-$(APP_NUMBER)-512kB.ld
 # BUILD_DIR = build/ota-app-$(APP_NUMBER)
 
-_OBJ = main.o
+_OBJ = main.o index_html.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
 CFLAGS = -c -I$(INCLUDE_DIR) -I$(SDK_INCLUDE_DIR) -I$(GCC_INCLUDE_DIR) -mlongcalls -DICACHE_FLASH -Wall -std=c99 #-Werror
@@ -70,6 +70,10 @@ $(BUILD_DIR)/$(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o
 $(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
+
+$(BUILD_DIR)/index_html.o: files/index.html
+	$(OBJ_COPY) -B xtensa -I binary -O elf32-xtensa-le --rename-section .data=.files.index_html $< $@
+#	$(LD) --no-relax -r -b binary -o $@ $<
 
 clean:
 	rm -f -r $(BUILD_DIR)/*

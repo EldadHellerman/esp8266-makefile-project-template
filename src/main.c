@@ -29,9 +29,11 @@ void ICACHE_FLASH_ATTR user_rf_pre_init(void){}
 void user_spi_flash_dio_to_qio_pre_init(void){}
 
 os_timer_t timer_main;
+extern char index_html_start, index_html_end;
 
 void main(void){
 	os_printf("I'm working!\r\n");
+	os_printf("file start %p end %p size %d!\r\n", &index_html_start, &index_html_end, ((&index_html_end)-(&index_html_start)));
 }
 
 void ICACHE_FLASH_ATTR user_init(void){

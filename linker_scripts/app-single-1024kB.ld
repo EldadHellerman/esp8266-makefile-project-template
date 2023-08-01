@@ -174,6 +174,12 @@ SECTIONS
 
     *(.irom0.literal .irom.literal .irom.text.literal .irom0.text .irom.text)
     _irom0_text_end = ABSOLUTE(.);
+
+    /* files: */
+    index_html_start = ABSOLUTE(.);
+    KEEP(*(.files.index_html))
+    index_html_end = ABSOLUTE(.);
+    . = ALIGN(4);
   } >irom0_0_seg :irom0_0_phdr
 
   .text : ALIGN(4)

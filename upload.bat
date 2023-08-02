@@ -1,3 +1,4 @@
+clear
 @echo flash addresses should be adjusted before use!
 @if "%1%" == "" (
     @REM default upload type can be choosen here
@@ -6,7 +7,7 @@
     set type=%1%
 )
 
-@if "%type%" == "ota" (
+@if "%type%" == "ota full" (
     @echo programing OTA app
     @esptool --chip esp8266 --port COM7 --baud 460800 write_flash --flash_size 1MB --flash_freq 40m --flash_mode dout --verify ^
         0x0000 ..\..\espressif\ESP8266_NONOS_SDK\bin\boot_V1.7.bin ^
@@ -20,7 +21,13 @@
         0xFE000 ..\..\espressif\ESP8266_NONOS_SDK\bin\blank.bin ^
         0xFF000 ..\..\espressif\ESP8266_NONOS_SDK\bin\blank.bin
         @echo done.
-) else if "%type%" == "single" (
+) else if "%type%" == "ota" (
+    @echo programing standalone app
+    @esptool --chip esp8266 --port COM7 --baud 460800 write_flash --flash_size 1MB --flash_freq 40m --flash_mode dout --verify ^
+        0x00000 build/app.elf-0x00000.bin ^
+        0x10000 build/app.elf-0x10000.bin
+    @echo done.
+) else if "%type%" == "single full" (
     @echo programing standalone app
     @esptool --chip esp8266 --port COM7 --baud 460800 write_flash --flash_size 1MB --flash_freq 40m --flash_mode dout --verify ^
         0x00000 build/app.elf-0x00000.bin ^
@@ -31,7 +38,13 @@
         0xFE000 ..\..\espressif\ESP8266_NONOS_SDK\bin\blank.bin ^
         0xFF000 ..\..\espressif\ESP8266_NONOS_SDK\bin\blank.bin
     @echo done.
+) else if "%type%" == "single" (
+    @echo programing standalone app
+    @esptool --chip esp8266 --port COM7 --baud 460800 write_flash --flash_size 1MB --flash_freq 40m --flash_mode dout --verify ^
+        0x00000 build/app.elf-0x00000.bin ^
+        0x10000 build/app.elf-0x10000.bin
+    @echo done.
 ) else (
     @echo usage: upload [single / ota]    
 )
-@pause
+@REM @pause

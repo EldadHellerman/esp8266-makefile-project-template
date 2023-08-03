@@ -4,92 +4,76 @@ LD = xtensa-lx106-elf-ld
 OBJ_COPY = xtensa-lx106-elf-objcopy
 OBJ_DUMP = xtensa-lx106-elf-objdump
 
-GCC_INCLUDE_DIR = "/mnt/d/Hobbies/programing/esp8266/espressif/xtensa-lx106-elf/xtensa-lx106-elf/include/"
-# why isn't there a string.h in xtensa-lx106-elf installed with apt-get?
-# /usr/lib/gcc/xtensa-lx106-elf/10.3.0/include
-
-OUTPUT_FILE_NAME = app
-SRC_DIR = src
-INCLUDE_DIR = include
-FILES_DIR = files
-LD_SCRIPTS_DIR = linker_scripts
-SDK_DIR = /mnt/d/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK
-SDK_INCLUDE_DIR = $(SDK_DIR)/include/
-SDK_LIB_DIR = $(SDK_DIR)/lib
-SDK_LINKER_SCRIPTS_DIR = $(SDK_DIR)/ld
-
-# single app:
-LINKER_SCRIPT = $(LD_SCRIPTS_DIR)/app-single-1024kB.ld
-BUILD_DIR = build
-
+DIR_SDK = /mnt/d/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK1234
+DIR_SRC = src
+DIR_INCLUDE = include
+DIR_FILES = files
+DIR_LD_SCRIPTS = linker_scripts
+DIR_BUILD = build
+OUTPUT_FILE = $(DIR_BUILD)/app
+LINKER_SCRIPT = $(DIR_LD_SCRIPTS)/app-single-1024kB.ld
 # OTA - two apps:
 # APP_NUMBER = 1
-# LINKER_SCRIPT = $(LD_SCRIPTS_DIR)/app-$(APP_NUMBER)-512kB.ld
-# BUILD_DIR = build/ota-app-$(APP_NUMBER)
-
-FILES = index.html 404.html more/nested.html
-FILES_OBJECTS = $(patsubst %,$(BUILD_DIR)/file_%.o,$(subst /,_,$(subst .,_,$(FILES))))
-
+# LINKER_SCRIPT = $(DIR_LD_SCRIPTS)/app-$(APP_NUMBER)-512kB.ld
+# DIR_BUILD = build/ota-app-$(APP_NUMBER)
 _OBJ = init.o main.o server.o
-OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ)) $(FILES_OBJECTS)
+FILES = index.html 404.html more/nested.html
 
-OUTPUT_FILE = $(BUILD_DIR)/$(OUTPUT_FILE_NAME)
+OBJ = $(patsubst %,$(DIR_BUILD)/%,$(_OBJ)) $(FILES_OBJECTS)
+FILES_OBJECTS = $(patsubst %,$(DIR_BUILD)/file_%.o,$(subst /,_,$(subst .,_,$(FILES))))
 
-CFLAGS = -c -I$(INCLUDE_DIR) -I. -I$(SDK_INCLUDE_DIR) -I$(GCC_INCLUDE_DIR) -mlongcalls -DICACHE_FLASH -Wall -std=c99 #-Werror
+CFLAGS = -c -I$(DIR_INCLUDE) -I. -I$(DIR_SDK)/include/ -mlongcalls -DICACHE_FLASH -Wall -std=c99 #-Werror
+LD_FLAGS = -L$(DIR_SDK)/lib --start-group -lc -lgcc -lhal -lphy -lpp -lnet80211\
+	-llwip -lwpa -lcrypto -lmain -ljson -lupgrade -lssl -lpwm -lsmartconfig --end-group
+LD_FLAGS += --nostdlib --gc-sections -static -T$(LINKER_SCRIPT) -Map $(OUTPUT_FILE).map
 
-LD_FLAGS = -L$(SDK_LIB_DIR) --start-group -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lcrypto -lmain -ljson -lupgrade -lssl -lpwm -lsmartconfig --end-group
-# LD_FLAGS += --nostdlib -nodefaultlibs --no-check-sections --gc-sections -static
-LD_FLAGS += --nostdlib --no-check-sections --gc-sections -static
-LD_FLAGS += -T$(LINKER_SCRIPT) -Map $(OUTPUT_FILE).map
-LD_FLAGS += -u call_user_start
+.PHONY: build clean fresh both files
 
-.PHONY: build clean upload fresh files
-
-build: $(OUTPUT_FILE)-0x00000.bin dissasembly
+build: $(OUTPUT_FILE).elf-0x00000.bin dissasembly
 	@echo done!
 
-$(OUTPUT_FILE)-0x00000.bin: $(OUTPUT_FILE).elf	
+$(OUTPUT_FILE).elf-0x00000.bin: $(OUTPUT_FILE).elf
 	@echo turning $^ to binary
 	@esptool --chip esp8266 elf2image --flash_size 1MB --flash_freq 40m --flash_mode dout $^ > /dev/null
-#	esptool image_info $(BUILD_DIR)/main.elf-0x00000.bin
+#	@esptool image_info $@
 
 dissasembly: $(OUTPUT_FILE).elf
 	@echo dissasembling
-	@$(OBJ_DUMP) -t $^ > $(BUILD_DIR)/dissasembly-sections.txt
-	@$(OBJ_DUMP) -h $^ > $(BUILD_DIR)/dissasembly-headers.txt
-	@$(OBJ_DUMP) -d $^ > $(BUILD_DIR)/dissasembly.txt
+	@$(OBJ_DUMP) -t $^ > $(DIR_BUILD)/dissasembly-sections.txt
+	@$(OBJ_DUMP) -h $^ > $(DIR_BUILD)/dissasembly-headers.txt
+	@$(OBJ_DUMP) -d $^ > $(DIR_BUILD)/dissasembly.txt
 
-# extracting app_partition.o from libmain.a since from some reason ld doesnt find system_partition_table_regist()
-$(BUILD_DIR)/app_partition.o: $(SDK_DIR)/lib/libmain.a
+# extracting app_partition.o from libmain.a since from some reason ld doesnt find system_partition_table_regist() itself.
+$(DIR_BUILD)/app_partition.o: $(DIR_SDK)/lib/libmain.a
 	@echo extracting app_partition.o from libmain.a
-	@mkdir -p $(BUILD_DIR)/temp/
-	@cp $< $(BUILD_DIR)/temp/libmain.a
-	@cd $(BUILD_DIR)/temp/; $(AR) x libmain.a
+	@mkdir -p $(DIR_BUILD)/temp/
+	@cp $< $(DIR_BUILD)/temp/libmain.a
+	@cd $(DIR_BUILD)/temp/; $(AR) x libmain.a
 	@cd ../..
-	@cp $(BUILD_DIR)/temp/app_partition.o $(BUILD_DIR)/app_partition.o
-	@rm -f -r $(BUILD_DIR)/temp
+	@cp $(DIR_BUILD)/temp/app_partition.o $(DIR_BUILD)/app_partition.o
+	@rm -f -r $(DIR_BUILD)/temp
 	
-$(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o $(FILES_OBJECTS)
+$(OUTPUT_FILE).elf: $(OBJ) $(DIR_BUILD)/app_partition.o $(FILES_OBJECTS)
 	@echo linking
 	@$(LD) $(LD_FLAGS) -o $@ $^
 
-$(BUILD_DIR)/init.o: $(SRC_DIR)/init.c
+$(DIR_BUILD)/init.o: $(DIR_SRC)/init.c
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h
+$(DIR_BUILD)/main.o: $(DIR_SRC)/main.c $(DIR_INCLUDE)/user_config.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(BUILD_DIR)/server.o: $(SRC_DIR)/server.c $(BUILD_DIR)/files.h
+$(DIR_BUILD)/server.o: $(DIR_SRC)/server.c $(DIR_BUILD)/files.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(FILES_OBJECTS) files $(BUILD_DIR)/files.h $(BUILD_DIR)/files.ld:
-	@python3 generate_files_ld_script_and_header.py $(BUILD_DIR) $(FILES_DIR) $(OBJ_COPY) $(FILES)
+$(FILES_OBJECTS) files $(DIR_BUILD)/files.h $(DIR_BUILD)/files.ld:
+	@python3 generate_files_ld_script_and_header.py $(DIR_BUILD) $(DIR_FILES) $(OBJ_COPY) $(FILES)
 
 clean:
-	rm -f -r $(BUILD_DIR)/*
+	rm -f -r $(DIR_BUILD)/*
 	clear
 
 fresh: clean build
@@ -97,12 +81,3 @@ fresh: clean build
 both:
 	make APP_NUMBER=1
 	make APP_NUMBER=2
-
-# serial port doens't work for me now in WSL, although it did back in 2018.
-# BAUDRATE = 115200
-# PORT = COM7
-#
-#upload: $(BUILD_DIR)/$(OUTPUT_FILE).elf-0x00000.bin $(BUILD_DIR)/$(OUTPUT_FILE).elf-0x10000.bin
-#   sudo -S chmod 666 /dev/tty8
-#	./tty_access.sh
-#	esptool.py --port /dev/ttyS8 --baud $(BAUDRATE) write_flash 0 $(BUILD_DIR)/$(OUTPUT_FILE).elf-0x00000.bin 0x10000 $(BUILD_DIR)/$(OUTPUT_FILE).elf-0x10000.bin

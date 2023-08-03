@@ -30,7 +30,7 @@ BUILD_DIR = build
 FILES = index.html 404.html more/nested.html
 FILES_OBJECTS = $(patsubst %,$(BUILD_DIR)/file_%.o,$(subst /,_,$(subst .,_,$(FILES))))
 
-_OBJ = main.o
+_OBJ = main.o init.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ)) $(FILES_OBJECTS)
 
 OUTPUT_FILE = $(BUILD_DIR)/$(OUTPUT_FILE_NAME)
@@ -72,6 +72,10 @@ $(BUILD_DIR)/app_partition.o: $(SDK_DIR)/lib/libmain.a
 $(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o $(FILES_OBJECTS)
 	@echo linking
 	@$(LD) $(LD_FLAGS) -o $@ $^
+
+$(BUILD_DIR)/init.o: $(SRC_DIR)/init.c
+	@echo compiling $@
+	@$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h $(BUILD_DIR)/files.h
 	@echo compiling $@

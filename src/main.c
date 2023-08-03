@@ -7,7 +7,7 @@
 #include "espconn.h"
 
 #include "user_config.h"
-#include "files.h"
+#include "build/files.h"
 
 #define TASK_SERVER_CLOSE_PRIORITY 0
 #define TASK_SERVER_CLOSE_SIG 'a'
@@ -21,27 +21,6 @@ struct espconn main_esp_conn;
 struct espconn *esp_conn_to_close;
 esp_tcp main_tcp;
 
-static const partition_item_t partition_table[] = {
-    // { SYSTEM_PARTITION_BOOTLOADER, 	0x00000, 0x00000},
-    // { SYSTEM_PARTITION_OTA_1, 	0x19000, 0x68000},
-    // { SYSTEM_PARTITION_OTA_2, 	0x91000, 0x68000},
-    { SYSTEM_PARTITION_CUSTOMER_BEGIN + 1, 	0x00000, 0x10000},
-    { SYSTEM_PARTITION_CUSTOMER_BEGIN + 2, 0x10000, 0xEB000},
-    { SYSTEM_PARTITION_RF_CAL, 0xFB000, 0x1000},
-    { SYSTEM_PARTITION_PHY_DATA, 0xFC000, 0x1000},
-    { SYSTEM_PARTITION_SYSTEM_PARAMETER, 0xFD000, 0x3000},
-};
-
-void user_pre_init(void){
-    if(!system_partition_table_regist(partition_table, sizeof(partition_table)/sizeof(partition_table[0]), FLASH_SIZE_8M_MAP_512_512)){
-		os_printf("system_partition_table_regist fail\r\n");
-		while(1);
-	}
-}
-
-void ICACHE_FLASH_ATTR user_rf_pre_init(void){}
-
-void user_spi_flash_dio_to_qio_pre_init(void){}
 
 void ICACHE_FLASH_ATTR user_main_server_disconnect(){
 	system_os_post(TASK_SERVER_CLOSE_PRIORITY, TASK_SERVER_CLOSE_SIG, TASK_SERVER_CLOSE_PARAMETER);
@@ -105,7 +84,7 @@ void ICACHE_FLASH_ATTR tcp_main_server_recv_cb(void *arg, unsigned char *rawdata
 	unsigned char *i = rawdata;
 	while(*i != '\r') os_printf("%c",*i++);
 	os_printf("\"\r\n");
-	
+
 	struct espconn *conn = (struct espconn *)arg;
 	esp_conn_to_close = conn;
 	int index = 0;
@@ -148,35 +127,53 @@ void ICACHE_FLASH_ATTR user_main_server_init(uint32 port){
 	// espconn_regist_sentcb(&main_esp_conn, (espconn_sent_callback)http_send_content);
 }
 
-os_timer_t timer_main;
+os_timer_t timer_print;
 
-void timer_main_cb(void){
+void timer_print_cb(void){
 	os_printf("I'm working!\r\n");
 }
 
+void ICACHE_FLASH_ATTR wifi_init(uint8 opmode){
+	if(opmode == STATION_MODE){
+		wifi_set_opmode_current(STATION_MODE);
+		wifi_station_dhcpc_set_maxtry(4);
+		wifi_station_set_hostname(DEVICE_NAME);
+		wifi_station_set_reconnect_policy(true);
+		char ssid[32] = "ESP8266-UPGRADE";
+		char password[64] = "12345678";
+		struct station_config conf;
+		os_memset(&conf.ssid, 0, 32);
+		os_memset(&conf.password, 0, 64);
+		os_memcpy(&conf.ssid, ssid, 32);
+		os_memcpy(&conf.password, password, 64);
+		wifi_station_set_config_current(&conf);
+	}else if(opmode == SOFTAP_MODE){
+		wifi_set_opmode_current(STATION_MODE);
+		char ssid[32] = DEVICE_NAME;
+		char password[64] = "12345678";
+		struct softap_config conf;
+		os_memset(&conf.ssid, 0, 32);
+		os_memset(&conf.password, 0, 64);
+		os_memcpy(&conf.ssid, ssid, 32);
+		os_memcpy(&conf.password, password, 64);
+		wifi_softap_set_config_current(&conf);
+	}
+}
+
 void ICACHE_FLASH_ATTR user_init(void){
-	uart_div_modify(0,UART_CLK_FREQ/115200); //uart_init(uart0_br, uart1_br); //why am i not using that?
-	os_delay_us(1000);
+	uart_div_modify(0, UART_CLK_FREQ/115200);
+	os_delay_us(1000); //wait for clock to stablize
 	
-	os_printf("\r\nstarted!\r\n");
-	os_printf("setting wifi:");
-	wifi_set_opmode_current(STATION_MODE);
-	wifi_station_dhcpc_set_maxtry(4);
-	wifi_station_set_hostname(DEVICE_NAME);
-	wifi_station_set_reconnect_policy(true);
-	// char ssid[32] = DEVICE_NAME;
-	char ssid[32] = "ESP8266-UPGRADE";
-	char password[64] = "12345678";
-	struct station_config station_conf;
-	os_memset(&station_conf.ssid, 0, 32); os_memset(&station_conf.password, 0, 64);
-	os_memcpy(&station_conf.ssid, ssid, 32); os_memcpy(&station_conf.password, password, 64);
-	wifi_station_set_config_current(&station_conf);
-
-	os_printf("... set\r\n");
+	os_printf("started!\n");
+	os_printf("setting wifi");
+	wifi_init(STATION_MODE);
+	os_printf(" ... done\n");
+	os_printf("starting server");
 	user_main_server_init(80);
-	os_printf("server started\r\n");
+	os_printf("... done\n");
 
-	os_timer_disarm(&timer_main);
-	os_timer_setfn(&timer_main, (os_timer_func_t *)timer_main_cb, NULL);
-	os_timer_arm(&timer_main, 10000, 1);
+	//registering a timer:
+	os_timer_disarm(&timer_print);
+	os_timer_setfn(&timer_print, (os_timer_func_t *)timer_print_cb, NULL);
+	os_timer_arm(&timer_print, 10000, 1);
 }

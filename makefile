@@ -69,16 +69,15 @@ $(BUILD_DIR)/app_partition.o: $(SDK_DIR)/lib/libmain.a
 	@cp $(BUILD_DIR)/temp/app_partition.o $(BUILD_DIR)/app_partition.o
 	@rm -f -r $(BUILD_DIR)/temp
 	
-$(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o
+$(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o $(FILES_OBJECTS)
 	@echo linking
 	@$(LD) $(LD_FLAGS) -o $@ $^
 
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h files
+$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-
-files:
+$(FILES_OBJECTS) files:
 	@python3 generate_files_ld_script_and_header.py $(LD_SCRIPTS_DIR) $(INCLUDE_DIR) $(BUILD_DIR) $(FILES_DIR) $(OBJ_COPY) $(FILES)
 
 clean:

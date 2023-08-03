@@ -14,9 +14,9 @@ static const partition_item_t partition_table[] = {
 
 void ICACHE_FLASH_ATTR user_pre_init(void){
     if(!system_partition_table_regist(partition_table, sizeof(partition_table)/sizeof(partition_table[0]), FLASH_SIZE_8M_MAP_512_512)){
-		os_printf("init: system_partition_table_regist() failed!\n");
-		while(1);
-	}
+        os_printf("init: system_partition_table_regist() failed!\n");
+        while(1);
+    }
 }
 
 void ICACHE_FLASH_ATTR user_rf_pre_init(void){}

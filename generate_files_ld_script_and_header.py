@@ -37,7 +37,7 @@ def generate_c_header(header_file_path :str, files_c_name :list[str]):
 extern int symbol_file_{file}_start, file_{file}_size;
 char *file_{file} = (char *)(&symbol_file_{file}_start);
 """)
-        header.write("\r\n#endif //FILES_H")
+        header.write("\r\n#endif /* FILES_H */")
 
 def generate_obj_files(build_dir :str, files_dir :str, obj_copy_bin :str, files :list[str]):
     for file in files:

@@ -35,7 +35,7 @@ OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ)) $(FILES_OBJECTS)
 
 OUTPUT_FILE = $(BUILD_DIR)/$(OUTPUT_FILE_NAME)
 
-CFLAGS = -c -I$(INCLUDE_DIR) -I$(SDK_INCLUDE_DIR) -I$(GCC_INCLUDE_DIR) -mlongcalls -DICACHE_FLASH -Wall -std=c99 #-Werror
+CFLAGS = -c -I$(INCLUDE_DIR) -I. -I$(SDK_INCLUDE_DIR) -I$(GCC_INCLUDE_DIR) -mlongcalls -DICACHE_FLASH -Wall -std=c99 #-Werror
 
 LD_FLAGS = -L$(SDK_LIB_DIR) --start-group -lc -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lcrypto -lmain -ljson -lupgrade -lssl -lpwm -lsmartconfig --end-group
 # LD_FLAGS += --nostdlib -nodefaultlibs --no-check-sections --gc-sections -static
@@ -73,12 +73,12 @@ $(OUTPUT_FILE).elf: $(OBJ) $(BUILD_DIR)/app_partition.o $(FILES_OBJECTS)
 	@echo linking
 	@$(LD) $(LD_FLAGS) -o $@ $^
 
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h
+$(BUILD_DIR)/main.o: $(SRC_DIR)/main.c $(INCLUDE_DIR)/user_config.h $(BUILD_DIR)/files.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(FILES_OBJECTS) files:
-	@python3 generate_files_ld_script_and_header.py $(LD_SCRIPTS_DIR) $(INCLUDE_DIR) $(BUILD_DIR) $(FILES_DIR) $(OBJ_COPY) $(FILES)
+$(FILES_OBJECTS) files $(BUILD_DIR)/files.h $(BUILD_DIR)/files.ld:
+	@python3 generate_files_ld_script_and_header.py $(BUILD_DIR) $(FILES_DIR) $(OBJ_COPY) $(FILES)
 
 clean:
 	rm -f -r $(BUILD_DIR)/*

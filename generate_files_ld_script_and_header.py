@@ -46,12 +46,12 @@ def generate_obj_files(build_dir :str, files_dir :str, obj_copy_bin :str, files 
                   f" --rename-section .data=.file.{file_c_name} {files_dir}/{file} {build_dir}/file_{file_c_name}.o")
 
 if __name__ == "__main__":
-    linker_scripts_dir = sys.argv[1] + "/files.ld"
-    include_dir = sys.argv[2] + "/files.h"
-    build_dir = sys.argv[3]
-    files_dir = sys.argv[4]
-    obj_copy_bin = sys.argv[5]
-    files = sys.argv[6:]
+    build_dir = sys.argv[1]
+    linker_scripts_dir = build_dir + "/files.ld"
+    include_dir = build_dir + "/files.h"
+    files_dir = sys.argv[2]
+    obj_copy_bin = sys.argv[3]
+    files = sys.argv[4:]
     files_c_name = [file_name_to_c_name(file) for file in files]
     print("Generating files c header, linker script, and object files")
     generate_c_header(include_dir, files_c_name)

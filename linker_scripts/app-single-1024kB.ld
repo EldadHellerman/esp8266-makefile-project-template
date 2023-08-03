@@ -176,7 +176,7 @@ SECTIONS
     _irom0_text_end = ABSOLUTE(.);
 
     /* files: */
-    INCLUDE "linker_scripts/files.ld"
+    INCLUDE "build/files.ld"
   } >irom0_0_seg :irom0_0_phdr
 
   .text : ALIGN(4)

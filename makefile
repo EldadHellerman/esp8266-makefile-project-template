@@ -4,7 +4,7 @@ LD = xtensa-lx106-elf-ld
 OBJ_COPY = xtensa-lx106-elf-objcopy
 OBJ_DUMP = xtensa-lx106-elf-objdump
 
-DIR_SDK = /mnt/d/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK1234
+DIR_SDK = /mnt/d/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK
 DIR_SRC = src
 DIR_INCLUDE = include
 DIR_FILES = files
@@ -27,15 +27,18 @@ LD_FLAGS = -L$(DIR_SDK)/lib --start-group -lc -lgcc -lhal -lphy -lpp -lnet80211\
 	-llwip -lwpa -lcrypto -lmain -ljson -lupgrade -lssl -lpwm -lsmartconfig --end-group
 LD_FLAGS += --nostdlib --gc-sections -static -T$(LINKER_SCRIPT) -Map $(OUTPUT_FILE).map
 
-.PHONY: build clean fresh both files
+.PHONY: build clean fresh both files build_directory
 
-build: $(OUTPUT_FILE).elf-0x00000.bin dissasembly
+build: build_directory $(OUTPUT_FILE).elf-0x00000.bin dissasembly
 	@echo done!
 
 $(OUTPUT_FILE).elf-0x00000.bin: $(OUTPUT_FILE).elf
 	@echo turning $^ to binary
 	@esptool --chip esp8266 elf2image --flash_size 1MB --flash_freq 40m --flash_mode dout $^ > /dev/null
 #	@esptool image_info $@
+
+build_directory:
+	mkdir -p $(DIR_BUILD)
 
 dissasembly: $(OUTPUT_FILE).elf
 	@echo dissasembling
@@ -49,7 +52,6 @@ $(DIR_BUILD)/app_partition.o: $(DIR_SDK)/lib/libmain.a
 	@mkdir -p $(DIR_BUILD)/temp/
 	@cp $< $(DIR_BUILD)/temp/libmain.a
 	@cd $(DIR_BUILD)/temp/; $(AR) x libmain.a
-	@cd ../..
 	@cp $(DIR_BUILD)/temp/app_partition.o $(DIR_BUILD)/app_partition.o
 	@rm -f -r $(DIR_BUILD)/temp
 	

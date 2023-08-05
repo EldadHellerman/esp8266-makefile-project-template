@@ -47,12 +47,12 @@ static void ICACHE_FLASH_ATTR server_send_http_content(struct espconn *conn){
     else os_printf("sent\n");
 }
 
-static void ICACHE_FLASH_ATTR server_send_http(struct espconn *conn, int status_code, char *status_text, char *content_type, char *file, uint16 file_size){
+static void ICACHE_FLASH_ATTR server_send_http(struct espconn *conn, int status_code, char *status_text, char *content_type, file_ptr file){
     /* sends a file using as http response. */
     server_send_http_content_data = file;
-    server_send_http_content_size = file_size;
+    server_send_http_content_size = file_size(file);
     espconn_regist_sentcb(conn, (espconn_sent_callback)server_send_http_content);
-    server_send_http_header(conn, status_code, status_text, file_size, content_type);
+    server_send_http_header(conn, status_code, status_text, server_send_http_content_size, content_type);
 }
 
 // callback functions:
@@ -66,14 +66,14 @@ static void ICACHE_FLASH_ATTR server_cb_recive(struct espconn *conn, char *data,
     if(string_starts_with(data, "GET ")){
         data += 4;
         if(string_starts_with(data, "/ ") || string_starts_with(data, "/index.html ")){
-            server_send_http(conn, 200, "OK", "text/html", file_index_html, file_index_html_size);
+            server_send_http(conn, 200, "OK", "text/html", file_index_html);
         }else if(string_starts_with(data, "/404.html ")){
-            server_send_http(conn, 404, "GO TO HELL", "text/html", file_404_html, file_404_html_size);
+            server_send_http(conn, 404, "GO TO HELL", "text/html", file_404_html);
         }else if(string_starts_with(data, "/more/nested.html ")){
-            server_send_http(conn, 200, "OK", "text/html", file_more_nested_html, file_more_nested_html_size);
+            server_send_http(conn, 200, "OK", "text/html", file_more_nested_html);
         }else{
             os_printf("server: GET request to an non-existing path\n");
-            server_send_http(conn, 404, "GO TO HELL", "text/html", file_404_html, file_404_html_size);
+            server_send_http(conn, 404, "GO TO HELL", "text/html", file_404_html);
         }
     }else{
         os_printf("server: invalid request (not a GET request)\n");

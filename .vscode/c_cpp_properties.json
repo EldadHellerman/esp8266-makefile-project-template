@@ -19,14 +19,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
-                "D:/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK/include",
-                "D:/Hobbies/programing/esp8266/espressif/xtensa-lx106-elf/xtensa-lx106-elf/include/"
-            ],
-            "defines": [],
-            "compilerPath": "D:/Hobbies/programing/esp8266/espressif/xtensa-lx106-elf/bin/xtensa-lx106-elf-gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++14",
-            "intelliSenseMode": "linux-gcc-x64"
+                "D:/Hobbies/programing/esp8266/espressif/ESP8266_NONOS_SDK/include"
+            ]
         }
     ],
     "version": 4

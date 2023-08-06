@@ -17,7 +17,7 @@ LINKER_SCRIPT = $(DIR_LD_SCRIPTS)/app-single-1024kB.ld
 # LINKER_SCRIPT = $(DIR_LD_SCRIPTS)/app-$(APP_NUMBER)-512kB.ld
 # DIR_BUILD = build/ota-app-$(APP_NUMBER)
 _OBJ = init.o main.o server.o
-FILES = index.html 404.html more/nested.html
+FILES = index.html 404.html more/nested.html favicon.png
 
 OBJ = $(patsubst %,$(DIR_BUILD)/%,$(_OBJ)) $(FILES_OBJECTS)
 FILES_OBJECTS = $(patsubst %,$(DIR_BUILD)/file_%.o,$(subst /,_,$(subst .,_,$(FILES))))
@@ -38,7 +38,7 @@ $(OUTPUT_FILE).elf-0x00000.bin: $(OUTPUT_FILE).elf
 #	@esptool image_info $@
 
 build_directory:
-	mkdir -p $(DIR_BUILD)
+	@mkdir -p $(DIR_BUILD)
 
 dissasembly: $(OUTPUT_FILE).elf
 	@echo dissasembling
@@ -63,11 +63,11 @@ $(DIR_BUILD)/init.o: $(DIR_SRC)/init.c
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(DIR_BUILD)/main.o: $(DIR_SRC)/main.c $(DIR_INCLUDE)/user_config.h
+$(DIR_BUILD)/main.o: $(DIR_SRC)/main.c $(DIR_INCLUDE)/server.h $(DIR_BUILD)/files.h $(DIR_INCLUDE)/user_config.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
-$(DIR_BUILD)/server.o: $(DIR_SRC)/server.c $(DIR_BUILD)/files.h
+$(DIR_BUILD)/server.o: $(DIR_SRC)/server.c $(DIR_INCLUDE)/server.h $(DIR_BUILD)/files.h
 	@echo compiling $@
 	@$(CC) $(CFLAGS) -o $@ $<
 
